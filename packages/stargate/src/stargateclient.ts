@@ -13,8 +13,18 @@ import { Event, fromTendermintEvent } from "./events";
 import {
   AuthExtension,
   BankExtension,
+  Erc20Extension,
+  EvmFeemarketExtension,
+  FeepolicyExtension,
+  OracleExtension,
+  PrecisebankExtension,
   setupAuthExtension,
   setupBankExtension,
+  setupErc20Extension,
+  setupEvmFeemarketExtension,
+  setupFeepolicyExtension,
+  setupOracleExtension,
+  setupPrecisebankExtension,
   setupStakingExtension,
   setupTxExtension,
   StakingExtension,
@@ -205,7 +215,7 @@ export interface StargateClientOptions {
 export class StargateClient {
   private readonly cometClient: CometClient | undefined;
   private readonly queryClient:
-    | (QueryClient & AuthExtension & BankExtension & StakingExtension & TxExtension)
+    | (QueryClient & AuthExtension & BankExtension & Erc20Extension & EvmFeemarketExtension & FeepolicyExtension & OracleExtension & PrecisebankExtension & StakingExtension & TxExtension)
     | undefined;
   private chainId: string | undefined;
   private readonly accountParser: AccountParser;
@@ -240,6 +250,11 @@ export class StargateClient {
         cometClient,
         setupAuthExtension,
         setupBankExtension,
+        setupErc20Extension,
+        setupEvmFeemarketExtension,
+        setupFeepolicyExtension,
+        setupOracleExtension,
+        setupPrecisebankExtension,
         setupStakingExtension,
         setupTxExtension,
       );
@@ -260,7 +275,7 @@ export class StargateClient {
   }
 
   protected getQueryClient():
-    | (QueryClient & AuthExtension & BankExtension & StakingExtension & TxExtension)
+    | (QueryClient & AuthExtension & BankExtension & Erc20Extension & EvmFeemarketExtension & FeepolicyExtension & OracleExtension & PrecisebankExtension & StakingExtension & TxExtension)
     | undefined {
     return this.queryClient;
   }
@@ -268,6 +283,11 @@ export class StargateClient {
   protected forceGetQueryClient(): QueryClient &
     AuthExtension &
     BankExtension &
+    Erc20Extension &
+    EvmFeemarketExtension &
+    FeepolicyExtension &
+    OracleExtension &
+    PrecisebankExtension &
     StakingExtension &
     TxExtension {
     if (!this.queryClient) {
