@@ -13,6 +13,7 @@ import { Event, fromTendermintEvent } from "./events";
 import {
   AuthExtension,
   BankExtension,
+  BexExtension,
   Erc20Extension,
   EvmFeemarketExtension,
   FeepolicyExtension,
@@ -20,6 +21,7 @@ import {
   PrecisebankExtension,
   setupAuthExtension,
   setupBankExtension,
+  setupBexExtension,
   setupErc20Extension,
   setupEvmFeemarketExtension,
   setupFeepolicyExtension,
@@ -215,7 +217,17 @@ export interface StargateClientOptions {
 export class StargateClient {
   private readonly cometClient: CometClient | undefined;
   private readonly queryClient:
-    | (QueryClient & AuthExtension & BankExtension & Erc20Extension & EvmFeemarketExtension & FeepolicyExtension & OracleExtension & PrecisebankExtension & StakingExtension & TxExtension)
+    | (QueryClient &
+        AuthExtension &
+        BankExtension &
+        BexExtension &
+        Erc20Extension &
+        EvmFeemarketExtension &
+        FeepolicyExtension &
+        OracleExtension &
+        PrecisebankExtension &
+        StakingExtension &
+        TxExtension)
     | undefined;
   private chainId: string | undefined;
   private readonly accountParser: AccountParser;
@@ -250,6 +262,7 @@ export class StargateClient {
         cometClient,
         setupAuthExtension,
         setupBankExtension,
+        setupBexExtension,
         setupErc20Extension,
         setupEvmFeemarketExtension,
         setupFeepolicyExtension,
@@ -275,7 +288,17 @@ export class StargateClient {
   }
 
   protected getQueryClient():
-    | (QueryClient & AuthExtension & BankExtension & Erc20Extension & EvmFeemarketExtension & FeepolicyExtension & OracleExtension & PrecisebankExtension & StakingExtension & TxExtension)
+    | (QueryClient &
+        AuthExtension &
+        BankExtension &
+        BexExtension &
+        Erc20Extension &
+        EvmFeemarketExtension &
+        FeepolicyExtension &
+        OracleExtension &
+        PrecisebankExtension &
+        StakingExtension &
+        TxExtension)
     | undefined {
     return this.queryClient;
   }
@@ -283,6 +306,7 @@ export class StargateClient {
   protected forceGetQueryClient(): QueryClient &
     AuthExtension &
     BankExtension &
+    BexExtension &
     Erc20Extension &
     EvmFeemarketExtension &
     FeepolicyExtension &

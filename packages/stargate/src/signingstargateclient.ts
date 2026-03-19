@@ -38,8 +38,10 @@ import {
 import {
   authzTypes,
   bankTypes,
+  bexTypes,
   createAuthzAminoConverters,
   createBankAminoConverters,
+  createBexAminoConverters,
   createDistributionAminoConverters,
   createErc20AminoConverters,
   createFeegrantAminoConverters,
@@ -71,6 +73,7 @@ export const defaultRegistryTypes: ReadonlyArray<[string, GeneratedType]> = [
   ["/cosmos.base.v1beta1.Coin", Coin],
   ...authzTypes,
   ...bankTypes,
+  ...bexTypes,
   ...distributionTypes,
   ...erc20Types,
   ...feegrantTypes,
@@ -112,6 +115,7 @@ export function createDefaultAminoConverters(): AminoConverters {
   return {
     ...createAuthzAminoConverters(),
     ...createBankAminoConverters(),
+    ...createBexAminoConverters(),
     ...createDistributionAminoConverters(),
     ...createErc20AminoConverters(),
     ...createFeepolicyAminoConverters(),

@@ -1,0 +1,5 @@
+# Build locally using the Dockerfile in this directory
+# To build: docker build -t cosmjs/gurud:main -f Dockerfile .
+REPOSITORY="cosmjs/gurud"
+VERSION="main"
+CONTAINER_NAME="gurud"

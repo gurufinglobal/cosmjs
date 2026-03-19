@@ -126,6 +126,46 @@ export { vestingTypes } from "./vesting/messages";
 
 // ---- Guru custom modules ----
 
+// bex
+export {
+  type AminoMsgChangeBexModerator,
+  type AminoMsgRegisterAdmin,
+  type AminoMsgRegisterExchange,
+  type AminoMsgRemoveAdmin,
+  type AminoMsgUpdateExchange,
+  type AminoMsgUpdateRatemeter,
+  type AminoMsgWithdrawFees,
+  createBexAminoConverters,
+} from "./bex/aminomessages";
+export {
+  type Exchange,
+  type MsgChangeBexModerator,
+  type MsgChangeBexModeratorEncodeObject,
+  type MsgRegisterAdmin,
+  type MsgRegisterAdminEncodeObject,
+  type MsgRegisterExchange,
+  type MsgRegisterExchangeEncodeObject,
+  type MsgRemoveAdmin,
+  type MsgRemoveAdminEncodeObject,
+  type MsgUpdateExchange,
+  type MsgUpdateExchangeEncodeObject,
+  type MsgUpdateRatemeter,
+  type MsgUpdateRatemeterEncodeObject,
+  type MsgWithdrawFees,
+  type MsgWithdrawFeesEncodeObject,
+  type RateRegistry,
+  type Ratemeter,
+  bexTypes,
+  isMsgChangeBexModeratorEncodeObject,
+  isMsgRegisterAdminEncodeObject,
+  isMsgRegisterExchangeEncodeObject,
+  isMsgRemoveAdminEncodeObject,
+  isMsgUpdateExchangeEncodeObject,
+  isMsgUpdateRatemeterEncodeObject,
+  isMsgWithdrawFeesEncodeObject,
+} from "./bex/messages";
+export { type BexExtension, setupBexExtension } from "./bex/queries";
+
 // oracle
 export {
   type AminoMsgRegisterOracleRequestDoc,
