@@ -46,6 +46,8 @@ export type {
   AminoMsgUpdateRatemeter,
   AminoMsgUpdateModeratorAddress,
   AminoMsgUpdateOracleRequestDoc,
+  AminoMsgXswapExchange,
+  AminoMsgXswapTransfer,
   AminoMsgVerifyInvariant,
   AminoMsgVote,
   AminoMsgVoteWeighted,
@@ -118,6 +120,10 @@ export type {
   MsgWithdrawFees,
   MsgWithdrawFeesEncodeObject,
   MsgWithdrawDelegatorRewardEncodeObject,
+  MsgXswapExchange,
+  MsgXswapExchangeEncodeObject,
+  MsgXswapTransfer,
+  MsgXswapTransferEncodeObject,
   ModuleDiscount,
   OracleEndpoint,
   OracleExtension,
@@ -129,7 +135,11 @@ export type {
   StakingExtension,
   SubmitDataSet,
   TokenPair,
+  Token,
+  Denom,
+  Hop,
   TxExtension,
+  XswapExtension,
 } from "./modules";
 export {
   AggregationRule,
@@ -153,6 +163,7 @@ export {
   createSlashingAminoConverters,
   createStakingAminoConverters,
   createVestingAminoConverters,
+  createXswapAminoConverters,
   erc20Types,
   feepolicyTypes,
   isAminoMsgBeginRedelegate,
@@ -206,6 +217,8 @@ export {
   isMsgVoteWeightedEncodeObject,
   isMsgWithdrawFeesEncodeObject,
   isMsgWithdrawDelegatorRewardEncodeObject,
+  isMsgXswapExchangeEncodeObject,
+  isMsgXswapTransferEncodeObject,
   oracleTypes,
   setupAuthExtension,
   setupAuthzExtension,
@@ -224,6 +237,8 @@ export {
   setupSlashingExtension,
   setupStakingExtension,
   setupTxExtension,
+  setupXswapExtension,
+  xswapTypes,
 } from "./modules";
 export { makeMultisignedTx, makeMultisignedTxBytes } from "./multisignature";
 export type { ProtobufRpcClient, QueryAbciResponse, QueryStoreResponse } from "./queryclient";

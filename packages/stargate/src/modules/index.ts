@@ -166,6 +166,26 @@ export {
 } from "./bex/messages";
 export { type BexExtension, setupBexExtension } from "./bex/queries";
 
+// xswap
+export {
+  type AminoMsgXswapExchange,
+  type AminoMsgXswapTransfer,
+  createXswapAminoConverters,
+} from "./xswap/aminomessages";
+export {
+  type Denom,
+  type Hop,
+  type MsgXswapExchange,
+  type MsgXswapExchangeEncodeObject,
+  type MsgXswapTransfer,
+  type MsgXswapTransferEncodeObject,
+  type Token,
+  isMsgXswapExchangeEncodeObject,
+  isMsgXswapTransferEncodeObject,
+  xswapTypes,
+} from "./xswap/messages";
+export { type XswapExtension, setupXswapExtension } from "./xswap/queries";
+
 // oracle
 export {
   type AminoMsgRegisterOracleRequestDoc,

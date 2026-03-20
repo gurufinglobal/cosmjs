@@ -9,6 +9,7 @@
 | 모듈 | 패키지 경로 | Tx | Query |
 |------|------------|-----|-------|
 | bex | `guru.bex.v1` | ✅ | ✅ |
+| xswap | `gxstable.xswap.v1` | ✅ | ✅ |
 | oracle | `guru.oracle.v1` | ✅ | ✅ |
 | feepolicy | `guru.feepolicy.v1` | ✅ | ✅ |
 | erc20 | `cosmos.evm.erc20.v1` | ✅ | ✅ |
@@ -150,7 +151,125 @@ const available = await client.forceGetQueryClient().bex.availableFees("1");
 
 ---
 
-### 2. Oracle (`guru.oracle.v1`)
+### 2. Xswap (`gxstable.xswap.v1`)
+
+IBC 전송 기반 토큰 전송/교환 모듈입니다.
+일반 전송(`MsgTransfer`)과 스테이션 기반 교환 전송(`MsgExchange`)을 지원합니다.
+
+#### 타입
+
+```typescript
+interface Hop {
+  portId: string;
+  channelId: string;
+}
+
+interface Denom {
+  base: string;
+  trace: Hop[];
+}
+
+interface MsgXswapTransfer {
+  sourcePort: string;
+  sourceChannel: string;
+  token?: { denom: string; amount: string };
+  sender: string;
+  receiver: string;
+  timeoutTimestamp: bigint;
+  memo: string;
+  encoding: string;
+}
+
+interface MsgXswapExchange {
+  sourcePort: string;
+  sourceChannel: string;
+  exchangeId: string;
+  token?: { denom: string; amount: string };
+  sender: string;
+  receiver: string;
+  timeoutTimestamp: bigint;
+  memo: string;
+  encoding: string;
+}
+```
+
+#### Tx 사용법
+
+```typescript
+import { SigningStargateClient } from "@cosmjs/stargate";
+
+const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer);
+
+// IBC transfer 기반 전송
+await client.signAndBroadcast(
+  senderAddress,
+  [
+    {
+      typeUrl: "/gxstable.xswap.v1.MsgTransfer",
+      value: {
+        sourcePort: "transfer",
+        sourceChannel: "channel-0",
+        token: { denom: "agxn", amount: "1000000" },
+        sender: senderAddress,
+        receiver: "gxstable1receiver...",
+        timeoutTimestamp: BigInt(Date.now()) * BigInt(1_000_000),
+        memo: "",
+        encoding: "",
+      },
+    },
+  ],
+  "auto",
+);
+
+// 스테이션 exchange 경유 전송
+await client.signAndBroadcast(
+  senderAddress,
+  [
+    {
+      typeUrl: "/gxstable.xswap.v1.MsgExchange",
+      value: {
+        sourcePort: "transfer",
+        sourceChannel: "channel-0",
+        exchangeId: "station-1",
+        token: { denom: "agxn", amount: "500000" },
+        sender: senderAddress,
+        receiver: "gxstable1receiver...",
+        timeoutTimestamp: BigInt(Date.now()) * BigInt(1_000_000),
+        memo: "xswap",
+        encoding: "",
+      },
+    },
+  ],
+  "auto",
+);
+```
+
+#### Query 사용법
+
+```typescript
+import { StargateClient } from "@cosmjs/stargate";
+
+const client = await StargateClient.connect(rpcEndpoint);
+
+// denom trace 목록
+const denoms = await client.forceGetQueryClient().xswap.denoms();
+
+// 단일 denom 조회 (hash 또는 full denom)
+const denom = await client.forceGetQueryClient().xswap.denom("ibc/ABCD1234...");
+
+// denom hash 조회
+const hash = await client.forceGetQueryClient().xswap.denomHash("transfer/channel-0/agxn");
+
+// escrow 주소 조회
+const escrow = await client.forceGetQueryClient().xswap.escrowAddress("transfer", "channel-0");
+
+// denom별 총 escrow 조회
+const totalEscrow = await client.forceGetQueryClient().xswap.totalEscrowForDenom("agxn");
+```
+
+---
+
+### 3. Oracle (`guru.oracle.v1`)
 
 온체인 오라클 데이터 피드 모듈입니다. 가격 정보, 환율, 주식 데이터 등 외부 데이터를 체인에 기록합니다.
 
@@ -297,7 +416,7 @@ const moderator = await client.forceGetQueryClient().oracle.moderatorAddress();
 
 ---
 
-### 3. FeePolicy (`guru.feepolicy.v1`)
+### 4. FeePolicy (`guru.feepolicy.v1`)
 
 계정별 트랜잭션 수수료 할인 정책을 관리하는 모듈입니다. moderator가 특정 계정에 대해 특정 메시지 타입의 수수료를 할인할 수 있습니다.
 
@@ -401,7 +520,7 @@ console.log(discount.modules[0].discounts[0].amount); // "0.5"
 
 ---
 
-### 4. ERC20 (`cosmos.evm.erc20.v1`)
+### 5. ERC20 (`cosmos.evm.erc20.v1`)
 
 Cosmos 네이티브 코인과 ERC-20 토큰 간 상호 변환을 지원하는 모듈입니다.
 
@@ -509,7 +628,7 @@ console.log(params.enableErc20, params.permissionlessRegistration);
 
 ---
 
-### 5. EVM FeeMarket (`cosmos.evm.feemarket.v1`)
+### 6. EVM FeeMarket (`cosmos.evm.feemarket.v1`)
 
 EIP-1559 동적 가스 수수료 메커니즘 모듈입니다. 쿼리 전용(Tx는 거버넌스만 지원).
 
@@ -570,6 +689,7 @@ const signingClient = await SigningStargateClient.connectWithSigner(
 // 모든 새 쿼리 extension 즉시 사용 가능
 const oracleDoc = await readClient.forceGetQueryClient().oracle.oracleRequestDoc(BigInt(1));
 const bexModerator = await readClient.forceGetQueryClient().bex.moderatorAddress();
+const xswapDenoms = await readClient.forceGetQueryClient().xswap.denoms();
 const tokenPairs = await readClient.forceGetQueryClient().erc20.tokenPairs();
 const discounts = await readClient.forceGetQueryClient().feepolicy.discounts();
 const baseFee = await readClient.forceGetQueryClient().evmFeemarket.baseFee();
@@ -583,8 +703,10 @@ const baseFee = await readClient.forceGetQueryClient().evmFeemarket.baseFee();
 import {
   defaultRegistryTypes,
   bexTypes,
+  xswapTypes,
   createDefaultAminoConverters,
   createBexAminoConverters,
+  createXswapAminoConverters,
   erc20Types,
   feepolicyTypes,
   oracleTypes,
@@ -595,6 +717,7 @@ import {
 
 // 기본 레지스트리에 이미 포함:
 // - bexTypes (MsgRegisterAdmin, MsgRemoveAdmin, MsgRegisterExchange, MsgUpdateExchange, MsgUpdateRatemeter, MsgWithdrawFees, MsgChangeBexModerator)
+// - xswapTypes (MsgTransfer, MsgExchange)
 // - erc20Types (MsgConvertERC20, MsgConvertCoin, MsgRegisterERC20, MsgToggleConversion)
 // - feepolicyTypes (MsgRegisterDiscounts, MsgRemoveDiscounts, MsgChangeModerator)
 // - oracleTypes (MsgRegisterOracleRequestDoc, MsgUpdateOracleRequestDoc, MsgSubmitOracleData, MsgUpdateModeratorAddress)
@@ -612,6 +735,10 @@ const registry = new Registry([
 ```
 cosmjs/packages/stargate/src/modules/
 ├── bex/
+│   ├── messages.ts
+│   ├── aminomessages.ts
+│   └── queries.ts
+├── xswap/
 │   ├── messages.ts
 │   ├── aminomessages.ts
 │   └── queries.ts

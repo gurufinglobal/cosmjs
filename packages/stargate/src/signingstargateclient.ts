@@ -51,6 +51,7 @@ import {
   createOracleAminoConverters,
   createStakingAminoConverters,
   createVestingAminoConverters,
+  createXswapAminoConverters,
   distributionTypes,
   erc20Types,
   feegrantTypes,
@@ -66,6 +67,7 @@ import {
   oracleTypes,
   stakingTypes,
   vestingTypes,
+  xswapTypes,
 } from "./modules";
 import { DeliverTxResponse, StargateClient, StargateClientOptions } from "./stargateclient";
 
@@ -84,6 +86,7 @@ export const defaultRegistryTypes: ReadonlyArray<[string, GeneratedType]> = [
   ...stakingTypes,
   ...ibcTypes,
   ...vestingTypes,
+  ...xswapTypes,
 ];
 
 /**
@@ -125,6 +128,7 @@ export function createDefaultAminoConverters(): AminoConverters {
     ...createIbcAminoConverters(),
     ...createFeegrantAminoConverters(),
     ...createVestingAminoConverters(),
+    ...createXswapAminoConverters(),
   };
 }
 
