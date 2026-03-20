@@ -8,17 +8,268 @@
 
 | 모듈 | 패키지 경로 | Tx | Query |
 |------|------------|-----|-------|
+| bex | `guru.bex.v1` | ✅ | ✅ |
+| xswap | `gxstable.xswap.v1` | ✅ | ✅ |
 | oracle | `guru.oracle.v1` | ✅ | ✅ |
 | feepolicy | `guru.feepolicy.v1` | ✅ | ✅ |
 | erc20 | `cosmos.evm.erc20.v1` | ✅ | ✅ |
 | evmfeemarket | `cosmos.evm.feemarket.v1` | — | ✅ |
-| precisebank | `cosmos.evm.precisebank.v1` | — | ✅ |
 
 ---
 
 ## 모듈별 상세
 
-### 1. Oracle (`guru.oracle.v1`)
+### 1. BEX (`guru.bex.v1`)
+
+토큰 교환(Exchange) 및 관리자 권한을 관리하는 모듈입니다.
+moderator/admin 권한에 따라 교환쌍 등록, 수정, 수수료 인출, 제한(ratemeter) 설정을 수행합니다.
+
+#### 타입
+
+```typescript
+interface Exchange {
+  id: string;                // cosmos.Int
+  adminAddress: string;
+  reserveAddress: string;
+  denomA: string;
+  ibcDenomA: string;
+  portA: string;
+  channelA: string;
+  denomB: string;
+  ibcDenomB: string;
+  portB: string;
+  channelB: string;
+  fee: string;               // cosmos.Dec
+  limit: string;             // LegacyDec
+  oracleRequestId: bigint;   // uint64
+  status: string;
+  metadata: Record<string, string>;
+}
+
+interface Ratemeter {
+  requestCountLimit: bigint; // uint64
+  requestPeriod?: Duration;  // google.protobuf.Duration
+}
+```
+
+#### Tx 사용법
+
+```typescript
+import { SigningStargateClient } from "@cosmjs/stargate";
+
+const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer);
+
+// admin 등록 (moderator 전용)
+await client.signAndBroadcast(
+  moderatorAddress,
+  [
+    {
+      typeUrl: "/guru.bex.v1.MsgRegisterAdmin",
+      value: {
+        moderatorAddress,
+        adminAddress: "guru1admin...",
+        exchangeId: "1", // cosmos.Int -> string
+      },
+    },
+  ],
+  "auto",
+);
+
+// Exchange 등록 (admin 전용)
+await client.signAndBroadcast(
+  adminAddress,
+  [
+    {
+      typeUrl: "/guru.bex.v1.MsgRegisterExchange",
+      value: {
+        adminAddress,
+        exchange: {
+          id: "1",
+          adminAddress,
+          reserveAddress: "guru1reserve...",
+          denomA: "agxn",
+          ibcDenomA: "",
+          portA: "transfer",
+          channelA: "",
+          denomB: "uguru",
+          ibcDenomB: "",
+          portB: "transfer",
+          channelB: "",
+          fee: "0.003",
+          limit: "1000000",
+          oracleRequestId: BigInt(0),
+          status: "enabled",
+          metadata: { source: "manual" },
+        },
+      },
+    },
+  ],
+  "auto",
+);
+
+// moderator 변경
+await client.signAndBroadcast(
+  moderatorAddress,
+  [
+    {
+      typeUrl: "/guru.bex.v1.MsgChangeBexModerator",
+      value: { moderatorAddress, newModeratorAddress: "guru1newmod..." },
+    },
+  ],
+  "auto",
+);
+```
+
+#### Query 사용법
+
+```typescript
+import { StargateClient } from "@cosmjs/stargate";
+
+const client = await StargateClient.connect(rpcEndpoint);
+
+// moderator 주소
+const moderator = await client.forceGetQueryClient().bex.moderatorAddress();
+
+// Exchange 목록 / 단건(id 필터)
+const exchanges = await client.forceGetQueryClient().bex.exchanges();
+const oneExchange = await client.forceGetQueryClient().bex.exchanges("1");
+
+// admin 여부
+const isAdmin = await client.forceGetQueryClient().bex.isAdmin("guru1admin...");
+
+// 다음 exchange id
+const nextId = await client.forceGetQueryClient().bex.nextExchangeId();
+
+// ratemeter
+const ratemeter = await client.forceGetQueryClient().bex.ratemeter();
+
+// 수수료 조회
+const collected = await client.forceGetQueryClient().bex.collectedFees("1");
+const locked = await client.forceGetQueryClient().bex.lockedFees("1");
+const available = await client.forceGetQueryClient().bex.availableFees("1");
+```
+
+---
+
+### 2. Xswap (`gxstable.xswap.v1`)
+
+IBC 전송 기반 토큰 전송/교환 모듈입니다.
+일반 전송(`MsgTransfer`)과 스테이션 기반 교환 전송(`MsgExchange`)을 지원합니다.
+
+#### 타입
+
+```typescript
+interface Hop {
+  portId: string;
+  channelId: string;
+}
+
+interface Denom {
+  base: string;
+  trace: Hop[];
+}
+
+interface MsgXswapTransfer {
+  sourcePort: string;
+  sourceChannel: string;
+  token?: { denom: string; amount: string };
+  sender: string;
+  receiver: string;
+  timeoutTimestamp: bigint;
+  memo: string;
+  encoding: string;
+}
+
+interface MsgXswapExchange {
+  sourcePort: string;
+  sourceChannel: string;
+  exchangeId: string;
+  token?: { denom: string; amount: string };
+  sender: string;
+  receiver: string;
+  timeoutTimestamp: bigint;
+  memo: string;
+  encoding: string;
+}
+```
+
+#### Tx 사용법
+
+```typescript
+import { SigningStargateClient } from "@cosmjs/stargate";
+
+const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer);
+
+// IBC transfer 기반 전송
+await client.signAndBroadcast(
+  senderAddress,
+  [
+    {
+      typeUrl: "/gxstable.xswap.v1.MsgTransfer",
+      value: {
+        sourcePort: "transfer",
+        sourceChannel: "channel-0",
+        token: { denom: "agxn", amount: "1000000" },
+        sender: senderAddress,
+        receiver: "gxstable1receiver...",
+        timeoutTimestamp: BigInt(Date.now()) * BigInt(1_000_000),
+        memo: "",
+        encoding: "",
+      },
+    },
+  ],
+  "auto",
+);
+
+// 스테이션 exchange 경유 전송
+await client.signAndBroadcast(
+  senderAddress,
+  [
+    {
+      typeUrl: "/gxstable.xswap.v1.MsgExchange",
+      value: {
+        sourcePort: "transfer",
+        sourceChannel: "channel-0",
+        exchangeId: "station-1",
+        token: { denom: "agxn", amount: "500000" },
+        sender: senderAddress,
+        receiver: "gxstable1receiver...",
+        timeoutTimestamp: BigInt(Date.now()) * BigInt(1_000_000),
+        memo: "xswap",
+        encoding: "",
+      },
+    },
+  ],
+  "auto",
+);
+```
+
+#### Query 사용법
+
+```typescript
+import { StargateClient } from "@cosmjs/stargate";
+
+const client = await StargateClient.connect(rpcEndpoint);
+
+// denom trace 목록
+const denoms = await client.forceGetQueryClient().xswap.denoms();
+
+// 단일 denom 조회 (hash 또는 full denom)
+const denom = await client.forceGetQueryClient().xswap.denom("ibc/ABCD1234...");
+
+// denom hash 조회
+const hash = await client.forceGetQueryClient().xswap.denomHash("transfer/channel-0/agxn");
+
+// escrow 주소 조회
+const escrow = await client.forceGetQueryClient().xswap.escrowAddress("transfer", "channel-0");
+
+// denom별 총 escrow 조회
+const totalEscrow = await client.forceGetQueryClient().xswap.totalEscrowForDenom("agxn");
+```
+
+---
+
+### 3. Oracle (`guru.oracle.v1`)
 
 온체인 오라클 데이터 피드 모듈입니다. 가격 정보, 환율, 주식 데이터 등 외부 데이터를 체인에 기록합니다.
 
@@ -165,7 +416,7 @@ const moderator = await client.forceGetQueryClient().oracle.moderatorAddress();
 
 ---
 
-### 2. FeePolicy (`guru.feepolicy.v1`)
+### 4. FeePolicy (`guru.feepolicy.v1`)
 
 계정별 트랜잭션 수수료 할인 정책을 관리하는 모듈입니다. moderator가 특정 계정에 대해 특정 메시지 타입의 수수료를 할인할 수 있습니다.
 
@@ -269,7 +520,7 @@ console.log(discount.modules[0].discounts[0].amount); // "0.5"
 
 ---
 
-### 3. ERC20 (`cosmos.evm.erc20.v1`)
+### 5. ERC20 (`cosmos.evm.erc20.v1`)
 
 Cosmos 네이티브 코인과 ERC-20 토큰 간 상호 변환을 지원하는 모듈입니다.
 
@@ -377,7 +628,7 @@ console.log(params.enableErc20, params.permissionlessRegistration);
 
 ---
 
-### 4. EVM FeeMarket (`cosmos.evm.feemarket.v1`)
+### 6. EVM FeeMarket (`cosmos.evm.feemarket.v1`)
 
 EIP-1559 동적 가스 수수료 메커니즘 모듈입니다. 쿼리 전용(Tx는 거버넌스만 지원).
 
@@ -418,26 +669,6 @@ const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer
 
 ---
 
-### 5. PreciseBank (`cosmos.evm.precisebank.v1`)
-
-EVM 호환성을 위한 18자리 소수점 정밀도 잔액 모듈입니다. 쿼리 전용.
-
-Cosmos SDK의 기본 `bank` 모듈은 정수 단위만 지원하는 반면, EVM은 18자리 소수점(wei)을 사용합니다. `precisebank`는 이 차이를 해소합니다.
-
-#### Query 사용법
-
-```typescript
-// 준비금에서 아직 순환하지 않는 잔여량 조회
-const remainder = await client.forceGetQueryClient().precisebank.remainder();
-console.log(`Remainder: ${remainder.amount} ${remainder.denom}`);
-
-// 특정 주소의 소수점 잔액 조회 (정수 잔액 제외, 소수 부분만)
-const fractional = await client.forceGetQueryClient().precisebank.fractionalBalance("guru1user...");
-console.log(`Fractional balance: ${fractional.amount} ${fractional.denom}`);
-```
-
----
-
 ## 클라이언트 초기화
 
 새 모듈들은 기본 클라이언트에 자동으로 포함됩니다:
@@ -457,10 +688,11 @@ const signingClient = await SigningStargateClient.connectWithSigner(
 
 // 모든 새 쿼리 extension 즉시 사용 가능
 const oracleDoc = await readClient.forceGetQueryClient().oracle.oracleRequestDoc(BigInt(1));
+const bexModerator = await readClient.forceGetQueryClient().bex.moderatorAddress();
+const xswapDenoms = await readClient.forceGetQueryClient().xswap.denoms();
 const tokenPairs = await readClient.forceGetQueryClient().erc20.tokenPairs();
 const discounts = await readClient.forceGetQueryClient().feepolicy.discounts();
 const baseFee = await readClient.forceGetQueryClient().evmFeemarket.baseFee();
-const fractional = await readClient.forceGetQueryClient().precisebank.fractionalBalance("guru1...");
 ```
 
 ## 커스텀 레지스트리/Amino 컨버터
@@ -470,7 +702,11 @@ const fractional = await readClient.forceGetQueryClient().precisebank.fractional
 ```typescript
 import {
   defaultRegistryTypes,
+  bexTypes,
+  xswapTypes,
   createDefaultAminoConverters,
+  createBexAminoConverters,
+  createXswapAminoConverters,
   erc20Types,
   feepolicyTypes,
   oracleTypes,
@@ -480,6 +716,8 @@ import {
 } from "@cosmjs/stargate";
 
 // 기본 레지스트리에 이미 포함:
+// - bexTypes (MsgRegisterAdmin, MsgRemoveAdmin, MsgRegisterExchange, MsgUpdateExchange, MsgUpdateRatemeter, MsgWithdrawFees, MsgChangeBexModerator)
+// - xswapTypes (MsgTransfer, MsgExchange)
 // - erc20Types (MsgConvertERC20, MsgConvertCoin, MsgRegisterERC20, MsgToggleConversion)
 // - feepolicyTypes (MsgRegisterDiscounts, MsgRemoveDiscounts, MsgChangeModerator)
 // - oracleTypes (MsgRegisterOracleRequestDoc, MsgUpdateOracleRequestDoc, MsgSubmitOracleData, MsgUpdateModeratorAddress)
@@ -496,6 +734,14 @@ const registry = new Registry([
 
 ```
 cosmjs/packages/stargate/src/modules/
+├── bex/
+│   ├── messages.ts
+│   ├── aminomessages.ts
+│   └── queries.ts
+├── xswap/
+│   ├── messages.ts
+│   ├── aminomessages.ts
+│   └── queries.ts
 ├── oracle/
 │   ├── messages.ts        # 타입 정의, 프로토버프 코덱, EncodeObject 인터페이스
 │   ├── aminomessages.ts   # Amino JSON 변환기
@@ -508,8 +754,6 @@ cosmjs/packages/stargate/src/modules/
 │   ├── messages.ts
 │   ├── aminomessages.ts
 │   └── queries.ts
-├── evmfeemarket/
-│   └── queries.ts         # 쿼리 전용
-└── precisebank/
+└── evmfeemarket/
     └── queries.ts         # 쿼리 전용
 ```

@@ -29,8 +29,10 @@ import {
   setupPrecisebankExtension,
   setupStakingExtension,
   setupTxExtension,
+  setupXswapExtension,
   StakingExtension,
   TxExtension,
+  XswapExtension,
 } from "./modules";
 import { QueryClient } from "./queryclient";
 import { isSearchTxQueryArray, SearchTxQuery } from "./search";
@@ -227,7 +229,8 @@ export class StargateClient {
         OracleExtension &
         PrecisebankExtension &
         StakingExtension &
-        TxExtension)
+        TxExtension &
+        XswapExtension)
     | undefined;
   private chainId: string | undefined;
   private readonly accountParser: AccountParser;
@@ -270,6 +273,7 @@ export class StargateClient {
         setupPrecisebankExtension,
         setupStakingExtension,
         setupTxExtension,
+        setupXswapExtension,
       );
     }
     const { accountParser = accountFromAny } = options;
@@ -298,7 +302,8 @@ export class StargateClient {
         OracleExtension &
         PrecisebankExtension &
         StakingExtension &
-        TxExtension)
+        TxExtension &
+        XswapExtension)
     | undefined {
     return this.queryClient;
   }
@@ -313,7 +318,8 @@ export class StargateClient {
     OracleExtension &
     PrecisebankExtension &
     StakingExtension &
-    TxExtension {
+    TxExtension &
+    XswapExtension {
     if (!this.queryClient) {
       throw new Error("Query client not available. You cannot use online functionality in offline mode.");
     }

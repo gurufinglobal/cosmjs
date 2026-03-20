@@ -16,6 +16,7 @@ import { calculateFee, GasPrice } from "./fee";
 import { SigningStargateClientOptions } from "./signingstargateclient";
 
 export const evmdEnabled: boolean = !!globalThis.process?.env.EVMD_ENABLED;
+export const gurudEnabled: boolean = !!globalThis.process?.env.GURUD_ENABLED;
 export const simapp47Enabled: boolean = !!globalThis.process?.env.SIMAPP47_ENABLED;
 export const simapp50Enabled: boolean = !!globalThis.process?.env.SIMAPP50_ENABLED;
 export const simapp53Enabled: boolean = !!globalThis.process?.env.SIMAPP53_ENABLED;
@@ -81,6 +82,15 @@ export const evmd = {
   blockTime: 1_000, // ms
 };
 
+export const gurud = {
+  tendermintUrlWs: "ws://localhost:26663",
+  tendermintUrlHttp: "http://localhost:26663",
+  chainId: "guru_631-1",
+  denomStaking: "agxn",
+  denomFee: "agxn",
+  blockTime: 1_000, // ms
+};
+
 export const slowEvmd = {
   tendermintUrlWs: "ws://localhost:26662",
   tendermintUrlHttp: "http://localhost:26662",
@@ -137,6 +147,10 @@ export const evmfaucet = {
   mnemonic:
     "copper push brief egg scan entry inform record adjust fossil boss egg comic alien upon aspect dry avoid interest fury window hint race symptom",
   address0: "cosmos1cml96vmptgw99syqrrz8az79xer2pcgp95srxm",
+};
+
+export const gurufaucet = {
+  mnemonic: "gather series sample skin gate mask gossip between equip knife total stereo",
 };
 
 /** Unused account */

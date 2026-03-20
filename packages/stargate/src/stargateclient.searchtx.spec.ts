@@ -16,7 +16,8 @@ import { MsgSendResponse } from "cosmjs-types/cosmos/bank/v1beta1/tx";
 import { Coin } from "cosmjs-types/cosmos/base/v1beta1/coin";
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 
-import { isMsgSendEncodeObject } from "./modules";
+import { isMsgSendEncodeObject, MsgRegisterAdminEncodeObject } from "./modules";
+import { SigningStargateClient } from "./signingstargateclient";
 import { DeliverTxResponse, isDeliverTxFailure, isDeliverTxSuccess, StargateClient } from "./stargateclient";
 import {
   defaultSigningClientOptions,
@@ -25,6 +26,9 @@ import {
   evmfaucet,
   faucet,
   fromOneElementArray,
+  gurud,
+  gurudEnabled,
+  gurufaucet,
   makeRandomAddress,
   simapp,
   simappEnabled,
@@ -101,6 +105,38 @@ async function sendTokens(
     broadcastResponse: broadcastResponse,
     tx: txRawBytes,
   };
+}
+
+async function sendBexRegisterAdmin(
+  client: SigningStargateClient,
+  moderatorAddress: string,
+  adminAddress: string,
+  exchangeId: string,
+  memo = "Register bex admin",
+): Promise<DeliverTxResponse> {
+  const msgRegisterAdmin: MsgRegisterAdminEncodeObject = {
+    typeUrl: "/guru.bex.v1.MsgRegisterAdmin",
+    value: {
+      moderatorAddress: moderatorAddress,
+      adminAddress: adminAddress,
+      exchangeId: exchangeId,
+    },
+  };
+
+  const fee = {
+    amount: coins(5000, "agxn"),
+    gas: "200000",
+  };
+
+  return client.signAndBroadcast(moderatorAddress, [msgRegisterAdmin], fee, memo);
+}
+
+interface TestBexTx {
+  readonly sender: string;
+  readonly admin: string;
+  readonly hash: string;
+  readonly height: number;
+  readonly code: number;
 }
 
 (simappEnabled ? describe : xdescribe)("StargateClient.getTx and .searchTx", () => {
@@ -529,6 +565,77 @@ async function sendTokens(
           height: sendSuccessful.height,
           hash: sendSuccessful.hash,
           tx: sendSuccessful.tx,
+        }),
+      );
+    });
+  });
+});
+
+(gurudEnabled ? describe : xdescribe)("StargateClient.searchTx (gurud bex)", () => {
+  let registerAdminTx: TestBexTx | undefined;
+
+  beforeAll(async () => {
+    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(gurufaucet.mnemonic, { prefix: "guru" });
+    const [accountFromWallet] = await wallet.getAccounts();
+    const moderatorAddress = accountFromWallet.address;
+    const adminAddress = moderatorAddress;
+    const client = await SigningStargateClient.connectWithSigner(
+      gurud.tendermintUrlHttp,
+      wallet,
+      defaultSigningClientOptions,
+    );
+
+    const response = await sendBexRegisterAdmin(
+      client,
+      moderatorAddress,
+      adminAddress,
+      "1",
+      "Register admin for bex searchTx test",
+    );
+
+    registerAdminTx = {
+      sender: moderatorAddress,
+      admin: adminAddress,
+      hash: response.transactionHash,
+      height: response.height,
+      code: response.code,
+    };
+
+    await sleep(75); // wait until transactions are indexed
+    client.disconnect();
+  });
+
+  describe("getTx", () => {
+    it("can fetch bex MsgRegisterAdmin transaction", async () => {
+      assert(registerAdminTx, "value must be set in beforeAll()");
+      const client = await StargateClient.connect(gurud.tendermintUrlHttp);
+      const result = await client.getTx(registerAdminTx.hash);
+      assert(result);
+      expect(result.height).toEqual(registerAdminTx.height);
+      expect(result.hash).toEqual(registerAdminTx.hash);
+      expect(result.code).toEqual(registerAdminTx.code);
+
+      const tx = decodeTxRaw(result.tx);
+      const hasRegisterAdmin = tx.body.messages.some((msg) => msg.typeUrl === "/guru.bex.v1.MsgRegisterAdmin");
+      expect(hasRegisterAdmin).toBeTrue();
+    });
+  });
+
+  describe("searchTx", () => {
+    it("can search MsgRegisterAdmin by message.action and sender", async () => {
+      assert(registerAdminTx, "value must be set in beforeAll()");
+      const client = await StargateClient.connect(gurud.tendermintUrlHttp);
+      const query =
+        "message.action = '/guru.bex.v1.MsgRegisterAdmin' AND " +
+        `message.sender = '${registerAdminTx.sender}'`;
+      const results = await client.searchTx(query);
+
+      expect(results.length).toBeGreaterThanOrEqual(1);
+      expect(results).toContain(
+        jasmine.objectContaining({
+          hash: registerAdminTx.hash,
+          height: registerAdminTx.height,
+          code: registerAdminTx.code,
         }),
       );
     });
